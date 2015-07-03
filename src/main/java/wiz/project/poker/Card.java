@@ -5,7 +5,7 @@
  *   D-freak
  */
 
-package wiz.project.pokerbot.game.rule;
+package wiz.project.poker;
 
 
 

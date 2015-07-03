@@ -13,7 +13,6 @@ import java.util.Collections;
 import java.util.List;
 
 import wiz.project.ircbot.IRCBOT;
-import wiz.project.pokerbot.game.exception.InvalidInputException;
 import wiz.project.pokerbot.game.exception.InvalidStateException;
 import wiz.project.pokerbot.game.exception.PokerException;
 
@@ -49,6 +48,9 @@ public final class GameMaster {
     public void clear() {
         _playerNameList.clear();
         
+        synchronized (_POKER_INFO_LOCK) {
+            _pokerInfo.clear();
+        }
         synchronized (_STATUS_LOCK) {
             _status = GameStatus.CLOSE;
         }
@@ -76,7 +78,7 @@ public final class GameMaster {
             throw new NullPointerException("Player name is null.");
         }
         if (playerName.isEmpty()) {
-            throw new NullPointerException("Player name is empty.");
+            throw new IllegalArgumentException("Player name is empty.");
         }
         if (!_playerNameList.contains(playerName)) {
             throw new IllegalArgumentException("Player is not entry : " + playerName);
@@ -98,7 +100,7 @@ public final class GameMaster {
         if (_activePlayerIndex >= _playerNameList.size()) {
             _activePlayerIndex = 0;
         }
-        final List<String> list = Arrays.asList(activePlayer + " のターン！", "(色々未実装なので、このトーク画面で", " 「jan d」とだけ発言してください)");
+        final List<String> list = Arrays.asList(activePlayer + " のターン！", "(色々未実装なので、このトーク画面で", " 「pk c」とだけ発言してください)");
         IRCBOT.getInstance().talk(activePlayer, list);
     }
     
@@ -118,55 +120,23 @@ public final class GameMaster {
     }
     
     /**
-     * 参加プレイヤー登録処理
+     * 参加登録処理
      * 
-     * @param playerNameList プレイヤー名のリスト。
+     * @param playerName プレイヤー名。
      * @throws PokerException ゲーム処理例外。
      */
-    public void onEntry(final List<String> playerNameList) throws PokerException {
-        if (playerNameList == null) {
-            throw new NullPointerException("Player name list is null.");
+    public void onEntry(final String playerName) throws PokerException {
+        if (playerName == null) {
+            throw new NullPointerException("Player name is null.");
         }
-        if (playerNameList.isEmpty()) {
-            throw new NullPointerException("Player name list is empty.");
+        if (playerName.isEmpty()) {
+            throw new IllegalArgumentException("Player name is empty.");
         }
-        
-        synchronized (_STATUS_LOCK) {
-            if (_status.isClose()) {
-                throw new InvalidStateException("--- Not started ---");
-            }
-            if (!_status.isEntryable()) {
-                throw new InvalidStateException("--- Already started ---");
-            }
+        if (_playerNameList.contains(playerName)) {
+            throw new IllegalArgumentException("Player is already entry : " + playerName);
         }
         
-        for (final String playerName : playerNameList) {
-            if (!IRCBOT.getInstance().exists(playerName)) {
-                // 存在しないプレイヤーが指定された
-                throw new InvalidInputException("Player is not found : " + playerName);
-            }
-        }
-        _playerNameList.addAll(playerNameList);
-        
-        // TODO 席決め
-        // コントローラでやる予定
-        
-        synchronized (_STATUS_LOCK) {
-            _status = GameStatus.IDLE;
-        }
-        
-        // TODO 第一ゲーム
-        // コントローラでやる予定
-        
-        
-        
-        // 以降はダミー処理
-        final String activePlayer = _playerNameList.get(_activePlayerIndex++);
-        if (_activePlayerIndex >= _playerNameList.size()) {
-            _activePlayerIndex = 0;
-        }
-        final List<String> list = Arrays.asList(activePlayer + " のターン！", "(色々未実装なので、このトーク画面で", " 「jan d」とだけ発言してください)");
-        IRCBOT.getInstance().talk(activePlayer, list);
+        _playerNameList.add(playerName);
     }
     
     /**
@@ -188,7 +158,7 @@ public final class GameMaster {
             throw new NullPointerException("Player name is null.");
         }
         if (playerName.isEmpty()) {
-            throw new NullPointerException("Player name is empty.");
+            throw new IllegalArgumentException("Player name is empty.");
         }
         if (!_playerNameList.contains(playerName)) {
             throw new IllegalArgumentException("Player is not entry : " + playerName);
@@ -205,17 +175,46 @@ public final class GameMaster {
      * @throws PokerException ゲーム処理例外。
      */
     public void onStart() throws PokerException {
+        if (_playerNameList.isEmpty()) {
+            throw new IllegalArgumentException("Player name list is empty.");
+        }
+        if (_playerNameList.size() == 1) {
+            throw new IllegalArgumentException("ぼっち");
+        }
+        
         synchronized (_STATUS_LOCK) {
             if (!_status.isClose()) {
                 throw new InvalidStateException("--- Already started ---");
             }
-            _status = GameStatus.PLAYER_ENTRY;
+            _status = GameStatus.IDLE;
         }
         
-        IRCBOT.getInstance().println("--- 参加プレイヤーを登録してください ---");
-        IRCBOT.getInstance().println("----- IRCで現在使用しているニックネームで登録すること");
-        IRCBOT.getInstance().println("----- 区切り文字には半角スペースを使用すること");
-        IRCBOT.getInstance().println("ex.) jan entry Mr.A Mr.B Mr.C");
+        synchronized (_POKER_INFO_LOCK) {
+            final PokerController controller = createPokerController();
+            controller.startGame(_pokerInfo, _playerNameList);
+            controller.startRound(_pokerInfo);
+        }
+        
+        
+        
+        // 以降はダミー処理
+        final String activePlayer = _playerNameList.get(_activePlayerIndex++);
+        if (_activePlayerIndex >= _playerNameList.size()) {
+            _activePlayerIndex = 0;
+        }
+        final List<String> list = Arrays.asList(activePlayer + " のターン！", "(色々未実装なので、このトーク画面で", " 「pk c」とだけ発言してください)");
+        IRCBOT.getInstance().talk(activePlayer, list);
+    }
+    
+    
+    
+    /**
+     * ポーカーコントローラを生成
+     * 
+     * @return ポーカーコントローラ。
+     */
+    private PokerController createPokerController() {
+        return new VSRingPokerController();
     }
     
     
@@ -232,6 +231,11 @@ public final class GameMaster {
      */
     private final Object _STATUS_LOCK = new Object();
     
+    /**
+     * ロックオブジェクト (ゲームの情報)
+     */
+    private final Object _POKER_INFO_LOCK = new Object();
+    
     
     
     /**
@@ -243,6 +247,11 @@ public final class GameMaster {
      * 参加プレイヤーリスト
      */
     private final List<String> _playerNameList = Collections.synchronizedList(new ArrayList<String>());
+    
+    /**
+     * ゲームの情報
+     */
+    private final PokerInfo _pokerInfo = new PokerInfo();
     
     
     

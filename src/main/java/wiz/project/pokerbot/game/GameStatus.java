@@ -15,11 +15,6 @@ package wiz.project.pokerbot.game;
 public enum GameStatus {
     
     /**
-     * エントリー受付
-     */
-    PLAYER_ENTRY,
-    
-    /**
      * ユーザ入力遮断
      */
     BUSY,
@@ -52,15 +47,6 @@ public enum GameStatus {
      */
     public boolean isIdle() {
         return this == IDLE;
-    }
-    
-    /**
-     * エントリー可能か
-     * 
-     * @return 判定結果。
-     */
-    public boolean isEntryable() {
-        return this == PLAYER_ENTRY;
     }
     
 }

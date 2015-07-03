@@ -53,7 +53,7 @@ final class MessageListener<T extends PircBotX> extends ListenerAdapter<T> {
         try {
             final String message = event.getMessage().replaceAll(" +", " ");  // 連続する半角スペースを削除
             if (!message.startsWith(COMMAND_PREFIX)) {
-                // 「jan hoge」以外全て無視
+                // 「pk hoge」以外全て無視
                 return;
             }
             
@@ -89,7 +89,7 @@ final class MessageListener<T extends PircBotX> extends ListenerAdapter<T> {
         try {
             final String message = event.getMessage().replaceAll(" +", " ");  // 連続する半角スペースを削除
             if (!message.startsWith(COMMAND_PREFIX)) {
-                // 「jan hoge」以外全て無視
+                // 「pk hoge」以外全て無視
                 return;
             }
             
@@ -122,21 +122,31 @@ final class MessageListener<T extends PircBotX> extends ListenerAdapter<T> {
         final String command = commandList.get(0);
         switch (command) {
         case "--close":
-            IRCBOT.getInstance().println("(  ；∀；)");
-            IRCBOT.getInstance().disconnect();
+            if (commandList.size() == 1) {
+                IRCBOT.getInstance().println("(  ；∀；)");
+                IRCBOT.getInstance().disconnect();
+            }
             break;
         case "s":
-            GameMaster.getInstance().onStart();
+            if (commandList.size() == 1) {
+                GameMaster.getInstance().onStart();
+            }
             break;
         case "e":
-            GameMaster.getInstance().onEnd();
+            if (commandList.size() == 1) {
+                GameMaster.getInstance().onEnd();
+            }
             break;
         case "entry":
-            GameMaster.getInstance().onEntry(commandList.subList(1, commandList.size()));
+            if (commandList.size() == 1) {
+                GameMaster.getInstance().onEntry(playerName);
+            }
             break;
         case "h":
         case "help":
-            GameMaster.getInstance().onHelpOpen();
+            if (commandList.size() == 1) {
+                GameMaster.getInstance().onHelpOpen();
+            }
             break;
         default:
             // 不明なコマンドは全て無視
@@ -155,12 +165,15 @@ final class MessageListener<T extends PircBotX> extends ListenerAdapter<T> {
         final String command = commandList.get(0);
         switch (command) {
         case "c":
-            // TODO ダミー機能
-            GameMaster.getInstance().onCheck(playerName);
+            if (commandList.size() == 1) {
+                GameMaster.getInstance().onCheck(playerName);
+            }
             break;
         case "h":
         case "help":
-            GameMaster.getInstance().onHelpTalk(playerName);
+            if (commandList.size() == 1) {
+                GameMaster.getInstance().onHelpTalk(playerName);
+            }
             break;
         default:
             // 不明なコマンドは全て無視
