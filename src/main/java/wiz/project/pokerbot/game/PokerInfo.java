@@ -217,6 +217,18 @@ final class PokerInfo extends Observable implements Cloneable {
     }
     
     /**
+     * 監視者に状態を通知 (強制)
+     * 
+     * @param param 通知パラメータ。
+     */
+    @Override
+    public void notifyObservers(final Object param) {
+        setChanged();
+        super.notifyObservers(param);
+    }
+    
+    
+    /**
      * アクティブプレイヤーを設定
      * 
      * @param playerName プレイヤー名。

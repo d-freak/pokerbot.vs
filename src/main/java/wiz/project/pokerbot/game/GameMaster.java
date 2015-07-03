@@ -90,18 +90,11 @@ public final class GameMaster {
             }
         }
         
-        // TODO チェック
-        // コントローラでやる予定
-        
-        
-        
-        // 以降はダミー処理
-        final String activePlayer = _playerNameList.get(_activePlayerIndex++);
-        if (_activePlayerIndex >= _playerNameList.size()) {
-            _activePlayerIndex = 0;
+        synchronized (_POKER_INFO_LOCK) {
+            // TODO 未実装につきダミー処理
+            final PokerController controller = createPokerController();
+            controller.next(_pokerInfo);
         }
-        final List<String> list = Arrays.asList(activePlayer + " のターン！", "(色々未実装なので、このトーク画面で", " 「pk c」とだけ発言してください)");
-        IRCBOT.getInstance().talk(activePlayer, list);
     }
     
     /**
@@ -137,6 +130,8 @@ public final class GameMaster {
         }
         
         _playerNameList.add(playerName);
+        
+        IRCBOT.getInstance().println("エントリーを受け付けました : " + playerName);
     }
     
     /**
@@ -190,20 +185,12 @@ public final class GameMaster {
         }
         
         synchronized (_POKER_INFO_LOCK) {
+            _pokerInfo.addObserver(new TalkAnnouncer());
+            
             final PokerController controller = createPokerController();
             controller.startGame(_pokerInfo, _playerNameList);
             controller.startRound(_pokerInfo);
         }
-        
-        
-        
-        // 以降はダミー処理
-        final String activePlayer = _playerNameList.get(_activePlayerIndex++);
-        if (_activePlayerIndex >= _playerNameList.size()) {
-            _activePlayerIndex = 0;
-        }
-        final List<String> list = Arrays.asList(activePlayer + " のターン！", "(色々未実装なので、このトーク画面で", " 「pk c」とだけ発言してください)");
-        IRCBOT.getInstance().talk(activePlayer, list);
     }
     
     
@@ -252,13 +239,6 @@ public final class GameMaster {
      * ゲームの情報
      */
     private final PokerInfo _pokerInfo = new PokerInfo();
-    
-    
-    
-    /**
-     * ダミー処理用のインデックス (後で消す)
-     */
-    private int _activePlayerIndex = 0;
     
 }
 

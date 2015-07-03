@@ -7,6 +7,8 @@
 
 package wiz.project.poker;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -28,6 +30,7 @@ public final class Hand implements Cloneable {
      * @param cardList カードリスト。
      */
     public Hand(final List<Card> cardList) {
+        _cardList = deepCopyList(cardList);
     }
     
     /**
@@ -36,6 +39,7 @@ public final class Hand implements Cloneable {
      * @param source 複製元オブジェクト。
      */
     public Hand(final Hand source) {
+        _cardList = deepCopyList(source._cardList);
     }
     
     
@@ -49,6 +53,36 @@ public final class Hand implements Cloneable {
     public Hand clone() {
         return new Hand(this);
     }
+    
+    
+    
+    /**
+     * カードリストを取得
+     * 
+     * @return カードリスト。
+     */
+    public List<Card> getCardList() {
+        return deepCopyList(_cardList);
+    }
+    
+    
+    
+    /**
+     * リストをディープコピー
+     * 
+     * @param sourceList 複製元。
+     * @return 複製結果。
+     */
+    private <E> List<E> deepCopyList(final List<E> sourceList) {
+        return Collections.synchronizedList(new ArrayList<E>(sourceList));
+    }
+    
+    
+    
+    /**
+     * カードリスト
+     */
+    private List<Card> _cardList = new ArrayList<>();
     
 }
 

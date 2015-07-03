@@ -81,7 +81,7 @@ class VSRingPokerController implements PokerController {
         final List<Position> positionList = new ArrayList<>(Arrays.asList(Position.values()));
         Collections.shuffle(positionList, new SecureRandom());
         
-        // プレイヤーを格納 (空席は放置)
+        // プレイヤーを格納 (空席はPokerInfoが自動で埋めるので放置)
         final Map<Position, Player> playerTable = new TreeMap<>();
         for (final String playerName : playerNameList) {
             playerTable.put(positionList.remove(0), new Player(playerName, PlayerType.HUMAN));
@@ -113,6 +113,8 @@ class VSRingPokerController implements PokerController {
         
         // TODO ブラインド徴収
         
+        // TODO HUの際の特殊挙動対応
+        
         info.setActivePosition(Position.UTG);
         onPhase(info);
     }
@@ -128,7 +130,7 @@ class VSRingPokerController implements PokerController {
         final Player activePlayer = info.getActivePlayer();
         switch (activePlayer.getType()) {
         case HUMAN:
-            // TODO 入力待ちメッセージ
+            info.notifyObservers(new AnnounceParam(activePlayer, AnnounceFlag.HAND_TALK));
             break;
         default:
             // 空席は無視
